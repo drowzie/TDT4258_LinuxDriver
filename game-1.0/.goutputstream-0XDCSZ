@@ -1,0 +1,34 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <unistd.h>
+
+void btn_handler(int sig){
+	printf("Entered Handler with signal %d", sig);
+	if(sig == POLLIN){
+		printf("Interrupt Registered");
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	FILE * btn_driver;
+	signal(SIGIO, &btn_handler);
+	btn_driver = fopen("dev/btn_gamepad", "r");
+	if(btn_driver == NULL){
+		printf("Error, Can't Open Device");
+		exit(EXIT_FAILURE);
+	}
+	if(fcntl(fileno(btn_driver), F_SETOWN, getpid()) < 0){
+		printf("Error, Can't set owner ship of Device");
+		exit(EXIT_FAILURE);
+	}
+	int flag = fcntl(fileno(btn_driver), F_GETFL);
+	fcntl(fileno(btn_driver), F_SETFL, flag | FASYNC);
+
+	fclose(btn_driver);
+	printf("Hello World, I'm game!\n");
+	exit(EXIT_SUCCESS);
+}
